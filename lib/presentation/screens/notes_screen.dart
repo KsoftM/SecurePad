@@ -86,6 +86,7 @@ class _NotesScreenState extends State<NotesScreen> {
                   future: encService.decrypt(EncryptedPayload(
                     ciphertext: notes[index].encryptedData,
                     nonce: notes[index].nonce,
+                    mac: notes[index].mac,
                   )),
                   builder: (context, decSnapshot) {
                     final preview = decSnapshot.data ?? '[Encrypted]';
@@ -112,6 +113,7 @@ class _NotesScreenState extends State<NotesScreen> {
                                   id: notes[index].id,
                                   encryptedData: encrypted.ciphertext,
                                   nonce: encrypted.nonce,
+                                  mac: encrypted.mac,
                                   created: notes[index].created,
                                   updated: Timestamp.now(),
                                   tags: notes[index].tags,
@@ -153,6 +155,7 @@ class _NotesScreenState extends State<NotesScreen> {
                         id: '',
                         encryptedData: encrypted.ciphertext,
                         nonce: encrypted.nonce,
+                        mac: encrypted.mac,
                         created: Timestamp.now(),
                         updated: Timestamp.now(),
                         tags: [],

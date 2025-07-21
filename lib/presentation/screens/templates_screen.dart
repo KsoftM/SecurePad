@@ -86,6 +86,7 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
                   future: encService.decrypt(EncryptedPayload(
                     ciphertext: templates[index].encryptedData,
                     nonce: templates[index].nonce,
+                    mac: templates[index].mac,
                   )),
                   builder: (context, decSnapshot) {
                     final name = decSnapshot.data ?? '[Encrypted]';
@@ -112,6 +113,7 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
                                   id: templates[index].id,
                                   encryptedData: encrypted.ciphertext,
                                   nonce: encrypted.nonce,
+                                  mac: encrypted.mac,
                                   created: templates[index].created,
                                   updated: DateTime.now(),
                                   name: newName,
@@ -154,6 +156,7 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
                         id: '',
                         encryptedData: encrypted.ciphertext,
                         nonce: encrypted.nonce,
+                        mac: encrypted.mac,
                         created: DateTime.now(),
                         updated: DateTime.now(),
                         name: name,

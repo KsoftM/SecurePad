@@ -86,13 +86,16 @@ class _RemindersScreenState extends State<RemindersScreen> {
                     final title = await encService.decrypt(EncryptedPayload(
                       ciphertext: reminders[index].encryptedData,
                       nonce: reminders[index].nonce,
+                      mac: reminders[index].mac,
                     ));
                     String content = '';
                     if (reminders[index].encryptedContent.isNotEmpty &&
-                        reminders[index].contentNonce.isNotEmpty) {
+                        reminders[index].contentNonce.isNotEmpty &&
+                        reminders[index].contentMac.isNotEmpty) {
                       content = await encService.decrypt(EncryptedPayload(
                         ciphertext: reminders[index].encryptedContent,
                         nonce: reminders[index].contentNonce,
+                        mac: reminders[index].contentMac,
                       ));
                     }
                     return [title, content];
@@ -129,8 +132,10 @@ class _RemindersScreenState extends State<RemindersScreen> {
                                   id: reminders[index].id,
                                   encryptedData: encryptedTitle.ciphertext,
                                   nonce: encryptedTitle.nonce,
+                                  mac: encryptedTitle.mac,
                                   encryptedContent: encryptedContent.ciphertext,
                                   contentNonce: encryptedContent.nonce,
+                                  contentMac: encryptedContent.mac,
                                   created: reminders[index].created,
                                   updated: DateTime.now(),
                                   title: newTitle,
@@ -175,8 +180,10 @@ class _RemindersScreenState extends State<RemindersScreen> {
                         id: '',
                         encryptedData: encryptedTitle.ciphertext,
                         nonce: encryptedTitle.nonce,
+                        mac: encryptedTitle.mac,
                         encryptedContent: encryptedContent.ciphertext,
                         contentNonce: encryptedContent.nonce,
+                        contentMac: encryptedContent.mac,
                         created: DateTime.now(),
                         updated: DateTime.now(),
                         title: title,

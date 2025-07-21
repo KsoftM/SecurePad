@@ -86,6 +86,7 @@ class _VaultScreenState extends State<VaultScreen> {
                   future: encService.decrypt(EncryptedPayload(
                     ciphertext: items[index].encryptedData,
                     nonce: items[index].nonce,
+                    mac: items[index].mac,
                   )),
                   builder: (context, decSnapshot) {
                     final label = decSnapshot.data ?? '[Encrypted]';
@@ -112,6 +113,7 @@ class _VaultScreenState extends State<VaultScreen> {
                                   id: items[index].id,
                                   encryptedData: encrypted.ciphertext,
                                   nonce: encrypted.nonce,
+                                  mac: encrypted.mac,
                                   created: items[index].created,
                                   updated: DateTime.now(),
                                   label: newLabel,
@@ -153,6 +155,7 @@ class _VaultScreenState extends State<VaultScreen> {
                         id: '',
                         encryptedData: encrypted.ciphertext,
                         nonce: encrypted.nonce,
+                        mac: encrypted.mac,
                         created: DateTime.now(),
                         updated: DateTime.now(),
                         label: label,

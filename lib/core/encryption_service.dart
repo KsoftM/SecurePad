@@ -4,7 +4,9 @@ import 'package:cryptography/cryptography.dart';
 class EncryptedPayload {
   final String ciphertext;
   final String nonce;
-  EncryptedPayload({required this.ciphertext, required this.nonce});
+  final String mac;
+  EncryptedPayload(
+      {required this.ciphertext, required this.nonce, required this.mac});
 }
 
 class EncryptionService {
@@ -23,19 +25,30 @@ class EncryptionService {
     return EncryptedPayload(
       ciphertext: base64Encode(secretBox.cipherText),
       nonce: base64Encode(secretBox.nonce),
+      mac: base64Encode(secretBox.mac.bytes),
     );
   }
 
   Future<String> decrypt(EncryptedPayload payload) async {
-    final secretBox = SecretBox(
-      base64Decode(payload.ciphertext),
-      nonce: base64Decode(payload.nonce),
-      mac: Mac.empty,
-    );
-    final cleartext = await cipher.decrypt(
-      secretBox,
-      secretKey: secretKey,
-    );
-    return utf8.decode(cleartext);
+    try {
+      final macBytes = base64Decode(payload.mac);
+      if (macBytes.isEmpty || macBytes.length != 16) {
+        throw Exception(
+            'Invalid MAC: expected 16 bytes, got \\${macBytes.length}');
+      }
+      final secretBox = SecretBox(
+        base64Decode(payload.ciphertext),
+        nonce: base64Decode(payload.nonce),
+        mac: Mac(macBytes),
+      );
+      final cleartext = await cipher.decrypt(
+        secretBox,
+        secretKey: secretKey,
+      );
+      return utf8.decode(cleartext);
+    } catch (e) {
+      print(e);
+      throw Exception('Decryption failed: $e');
+    }
   }
 }

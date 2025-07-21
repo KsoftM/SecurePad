@@ -2,6 +2,7 @@ class VaultModel {
   final String id;
   final String encryptedData;
   final String nonce;
+  final String mac;
   final DateTime created;
   final DateTime updated;
   final String label;
@@ -10,6 +11,7 @@ class VaultModel {
     required this.id,
     required this.encryptedData,
     required this.nonce,
+    required this.mac,
     required this.created,
     required this.updated,
     required this.label,
@@ -20,6 +22,7 @@ class VaultModel {
       id: id,
       encryptedData: map['encryptedData'] as String,
       nonce: map['nonce'] as String,
+      mac: map['mac'] as String? ?? '',
       created: DateTime.parse(map['created'] as String),
       updated: DateTime.parse(map['updated'] as String),
       label: map['label'] as String,
@@ -30,6 +33,7 @@ class VaultModel {
     return {
       'encryptedData': encryptedData,
       'nonce': nonce,
+      'mac': mac,
       'created': created.toIso8601String(),
       'updated': updated.toIso8601String(),
       'label': label,
