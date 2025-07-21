@@ -11,8 +11,15 @@ import '../../data/templates/template_model.dart';
 import '../../data/templates/templates_repository.dart';
 import 'template_editor_screen.dart';
 
-class TemplatesScreen extends StatelessWidget {
+class TemplatesScreen extends StatefulWidget {
   const TemplatesScreen({super.key});
+
+  @override
+  State<TemplatesScreen> createState() => _TemplatesScreenState();
+}
+
+class _TemplatesScreenState extends State<TemplatesScreen> {
+  String _search = '';
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +44,23 @@ class TemplatesScreen extends StatelessWidget {
     }
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Templates'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              decoration: const InputDecoration(
+                hintText: 'Search templates...',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) => setState(() => _search = value),
+            ),
+          ),
+        ),
+      ),
       body: StreamBuilder<List<TemplateModel>>(
         stream: templatesRepo.getTemplates(),
         builder: (context, snapshot) {
@@ -63,6 +87,10 @@ class TemplatesScreen extends StatelessWidget {
                   )),
                   builder: (context, decSnapshot) {
                     final name = decSnapshot.data ?? '[Encrypted]';
+                    if (_search.isNotEmpty &&
+                        !name.toLowerCase().contains(_search.toLowerCase())) {
+                      return const SizedBox.shrink();
+                    }
                     return ListTile(
                       leading: const Icon(Icons.view_list),
                       title: Text(name),

@@ -11,8 +11,15 @@ import '../../data/vault/vault_model.dart';
 import '../../data/vault/vault_repository.dart';
 import 'vault_editor_screen.dart';
 
-class VaultScreen extends StatelessWidget {
+class VaultScreen extends StatefulWidget {
   const VaultScreen({super.key});
+
+  @override
+  State<VaultScreen> createState() => _VaultScreenState();
+}
+
+class _VaultScreenState extends State<VaultScreen> {
+  String _search = '';
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +44,23 @@ class VaultScreen extends StatelessWidget {
     }
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Vault'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              decoration: const InputDecoration(
+                hintText: 'Search passwords...',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) => setState(() => _search = value),
+            ),
+          ),
+        ),
+      ),
       body: StreamBuilder<List<VaultModel>>(
         stream: vaultRepo.getVaultItems(),
         builder: (context, snapshot) {
@@ -63,6 +87,10 @@ class VaultScreen extends StatelessWidget {
                   )),
                   builder: (context, decSnapshot) {
                     final label = decSnapshot.data ?? '[Encrypted]';
+                    if (_search.isNotEmpty &&
+                        !label.toLowerCase().contains(_search.toLowerCase())) {
+                      return const SizedBox.shrink();
+                    }
                     return ListTile(
                       leading: const Icon(Icons.vpn_key),
                       title: Text(label),

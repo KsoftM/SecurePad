@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/password_generator.dart';
 
 class VaultEditorScreen extends StatefulWidget {
   final String? initialLabel;
@@ -52,10 +53,24 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
               controller: _labelController,
               decoration: const InputDecoration(labelText: 'Label'),
             ),
-            TextField(
-              controller: _secretController,
-              decoration: const InputDecoration(labelText: 'Secret / Password'),
-              obscureText: true,
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _secretController,
+                    decoration: const InputDecoration(labelText: 'Secret / Password'),
+                    obscureText: true,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  tooltip: 'Generate Password',
+                  onPressed: () {
+                    final generated = PasswordGenerator.generate();
+                    _secretController.text = generated;
+                  },
+                ),
+              ],
             ),
           ],
         ),

@@ -11,8 +11,15 @@ import '../../data/notes/note_model.dart';
 import '../../data/notes/notes_repository.dart';
 import 'note_editor_screen.dart';
 
-class NotesScreen extends StatelessWidget {
+class NotesScreen extends StatefulWidget {
   const NotesScreen({super.key});
+
+  @override
+  State<NotesScreen> createState() => _NotesScreenState();
+}
+
+class _NotesScreenState extends State<NotesScreen> {
+  String _search = '';
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +45,23 @@ class NotesScreen extends StatelessWidget {
     }
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Notes'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              decoration: const InputDecoration(
+                hintText: 'Search notes...',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) => setState(() => _search = value),
+            ),
+          ),
+        ),
+      ),
       body: StreamBuilder<List<NoteModel>>(
         stream: notesRepo.getNotes(),
         builder: (context, snapshot) {
@@ -63,6 +87,10 @@ class NotesScreen extends StatelessWidget {
                   )),
                   builder: (context, decSnapshot) {
                     final preview = decSnapshot.data ?? '[Encrypted]';
+                    if (_search.isNotEmpty &&
+                        !preview.toLowerCase().contains(_search.toLowerCase())) {
+                      return const SizedBox.shrink();
+                    }
                     return ListTile(
                       leading: const Icon(Icons.note),
                       title: Text(preview),

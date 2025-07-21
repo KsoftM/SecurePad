@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class ReminderEditorScreen extends StatefulWidget {
   final String? initialTitle;
@@ -17,6 +18,9 @@ class ReminderEditorScreen extends StatefulWidget {
 class _ReminderEditorScreenState extends State<ReminderEditorScreen> {
   late TextEditingController _titleController;
   late TextEditingController _contentController;
+  DateTime? _selectedDateTime;
+  String _repeat = 'None';
+  final List<String> _repeatOptions = ['None', 'Daily', 'Weekly', 'Monthly', 'Yearly'];
 
   @override
   void initState() {
@@ -60,6 +64,44 @@ class _ReminderEditorScreenState extends State<ReminderEditorScreen> {
               controller: _contentController,
               decoration: const InputDecoration(labelText: 'Reminder Content'),
               maxLines: null,
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(_selectedDateTime == null
+                      ? 'No date/time selected'
+                      : 'Scheduled: ' + DateFormat.yMd().add_jm().format(_selectedDateTime!)),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.calendar_today),
+                  onPressed: () async {
+                    final now = DateTime.now();
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: now,
+                      firstDate: now,
+                      lastDate: DateTime(now.year + 10),
+                    );
+                    if (date != null) {
+                      final time = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay.fromDateTime(now),
+                      );
+                      if (time != null) {
+                        setState(() {
+                          _selectedDateTime = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+                        });
+                      }
+                    }
+                  },
+                ),
+              ],
+            ),
+            DropdownButton<String>(
+              value: _repeat,
+              items: _repeatOptions.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+              onChanged: (val) => setState(() => _repeat = val ?? 'None'),
             ),
           ],
         ),

@@ -10,8 +10,15 @@ import '../../data/reminders/reminders_repository.dart';
 import 'reminder_editor_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class RemindersScreen extends StatelessWidget {
+class RemindersScreen extends StatefulWidget {
   const RemindersScreen({super.key});
+
+  @override
+  State<RemindersScreen> createState() => _RemindersScreenState();
+}
+
+class _RemindersScreenState extends State<RemindersScreen> {
+  String _search = '';
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +43,23 @@ class RemindersScreen extends StatelessWidget {
     }
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Reminders'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              decoration: const InputDecoration(
+                hintText: 'Search reminders...',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) => setState(() => _search = value),
+            ),
+          ),
+        ),
+      ),
       body: StreamBuilder<List<ReminderModel>>(
         stream: remindersRepo.getReminders(),
         builder: (context, snapshot) {
@@ -62,6 +86,10 @@ class RemindersScreen extends StatelessWidget {
                   )),
                   builder: (context, decSnapshot) {
                     final title = decSnapshot.data ?? '[Encrypted]';
+                    if (_search.isNotEmpty &&
+                        !title.toLowerCase().contains(_search.toLowerCase())) {
+                      return const SizedBox.shrink();
+                    }
                     return ListTile(
                       leading: const Icon(Icons.alarm),
                       title: Text(title),
