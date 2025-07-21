@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:cryptography/cryptography.dart';
 import 'dart:convert';
+import 'dart:math';
 
 import '../../core/encryption_service.dart';
 import '../../core/secure_storage_service.dart';
@@ -30,12 +31,13 @@ class _NotesScreenState extends State<NotesScreen> {
     final storage = SecureStorageService();
 
     Future<EncryptionService> getEncryptionService() async {
-      // Try to get the key from secure storage, or generate and store if not present
+      // Always use the same key per user. Generate securely if not present.
       final keyString = await storage.read('key_$userId');
       SecretKey key;
       if (keyString == null) {
-        key = SecretKey(List<int>.generate(
-            32, (i) => i)); // In production, use secure random
+        final random = Random.secure();
+        final keyBytes = List<int>.generate(32, (_) => random.nextInt(256));
+        key = SecretKey(keyBytes);
         await storage.write(
             'key_$userId', base64Encode(await key.extractBytes()));
       } else {

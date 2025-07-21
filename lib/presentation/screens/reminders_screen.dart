@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cryptography/cryptography.dart';
 import 'dart:convert';
+import 'dart:math';
 import '../../core/encryption_service.dart';
 import '../../core/secure_storage_service.dart';
 import '../providers/auth_provider.dart';
@@ -32,8 +33,9 @@ class _RemindersScreenState extends State<RemindersScreen> {
       final keyString = await storage.read('reminder_key_$userId');
       SecretKey key;
       if (keyString == null) {
-        key = SecretKey(List<int>.generate(
-            32, (i) => i + 3)); // Use secure random in production
+        final random = Random.secure();
+        final keyBytes = List<int>.generate(32, (_) => random.nextInt(256));
+        key = SecretKey(keyBytes);
         await storage.write(
             'reminder_key_$userId', base64Encode(await key.extractBytes()));
       } else {

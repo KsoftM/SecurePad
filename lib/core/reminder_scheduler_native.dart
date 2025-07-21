@@ -34,9 +34,7 @@ class ReminderScheduler {
         body,
         tzTime,
         details,
-        androidAllowWhileIdle: true,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
     } else {
       await _notifications.zonedSchedule(
@@ -45,7 +43,7 @@ class ReminderScheduler {
         body,
         tzTime,
         details,
-        androidAllowWhileIdle: true,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         matchDateTimeComponents: repeat == 'Daily'
             ? DateTimeComponents.time
             : repeat == 'Weekly'
@@ -55,8 +53,6 @@ class ReminderScheduler {
                     : repeat == 'Yearly'
                         ? DateTimeComponents.dateAndTime
                         : null,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
       );
     }
   }

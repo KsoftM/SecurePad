@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:cryptography/cryptography.dart';
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:math';
 
 import '../../core/encryption_service.dart';
 import '../../core/secure_storage_service.dart';
@@ -33,8 +34,9 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
       final keyString = await storage.read('template_key_$userId');
       SecretKey key;
       if (keyString == null) {
-        key = SecretKey(List<int>.generate(
-            32, (i) => i + 2)); // Use secure random in production
+        final random = Random.secure();
+        final keyBytes = List<int>.generate(32, (_) => random.nextInt(256));
+        key = SecretKey(keyBytes);
         await storage.write(
             'template_key_$userId', base64Encode(await key.extractBytes()));
       } else {
