@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cryptography/cryptography.dart';
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math';
+import 'package:local_auth/local_auth.dart';
 
 import '../../core/encryption_service.dart';
 import '../../core/secure_storage_service.dart';
@@ -76,64 +79,11 @@ class _VaultScreenState extends State<VaultScreen> {
           }
           return ListView.builder(
             itemCount: items.length,
-            itemBuilder: (context, index) => FutureBuilder<EncryptionService>(
-              future: getEncryptionService(),
-              builder: (context, encSnapshot) {
-                if (!encSnapshot.hasData)
-                  return const ListTile(title: Text('[Loading...]'));
-                final encService = encSnapshot.data!;
-                return FutureBuilder<String>(
-                  future: encService.decrypt(EncryptedPayload(
-                    ciphertext: items[index].encryptedData,
-                    nonce: items[index].nonce,
-                    mac: items[index].mac,
-                  )),
-                  builder: (context, decSnapshot) {
-                    final label = decSnapshot.data ?? '[Encrypted]';
-                    if (_search.isNotEmpty &&
-                        !label.toLowerCase().contains(_search.toLowerCase())) {
-                      return const SizedBox.shrink();
-                    }
-                    return ListTile(
-                      leading: const Icon(Icons.vpn_key),
-                      title: Text(label),
-                      subtitle: Text(items[index].created.toString()),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => VaultEditorScreen(
-                              initialLabel: label,
-                              initialSecret:
-                                  '[Decrypted secret here]', // TODO: decrypt secret field if stored separately
-                              onSave: (newLabel, newSecret) async {
-                                final encrypted =
-                                    await encService.encrypt(newLabel);
-                                final updated = VaultModel(
-                                  id: items[index].id,
-                                  encryptedData: encrypted.ciphertext,
-                                  nonce: encrypted.nonce,
-                                  mac: encrypted.mac,
-                                  created: items[index].created,
-                                  updated: DateTime.now(),
-                                  label: newLabel,
-                                );
-                                await vaultRepo.updateVaultItem(updated);
-                              },
-                            ),
-                          ),
-                        );
-                      },
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () async {
-                          await vaultRepo.deleteVaultItem(items[index].id);
-                        },
-                      ),
-                    );
-                  },
-                );
-              },
+            itemBuilder: (context, index) => _VaultPasswordTile(
+              item: items[index],
+              encServiceFuture: getEncryptionService(),
+              search: _search,
+              vaultRepo: vaultRepo,
             ),
           );
         },
@@ -150,7 +100,8 @@ class _VaultScreenState extends State<VaultScreen> {
                 MaterialPageRoute(
                   builder: (context) => VaultEditorScreen(
                     onSave: (label, secret) async {
-                      final encrypted = await encService.encrypt(label);
+                      final actualSecret = secret.isEmpty ? label : secret;
+                      final encrypted = await encService.encrypt(actualSecret);
                       final item = VaultModel(
                         id: '',
                         encryptedData: encrypted.ciphertext,
@@ -171,6 +122,112 @@ class _VaultScreenState extends State<VaultScreen> {
           );
         },
       ),
+    );
+  }
+}
+
+class _VaultPasswordTile extends StatefulWidget {
+  final VaultModel item;
+  final Future<EncryptionService> encServiceFuture;
+  final String search;
+  final VaultRepository vaultRepo;
+  const _VaultPasswordTile(
+      {required this.item,
+      required this.encServiceFuture,
+      required this.search,
+      required this.vaultRepo});
+
+  @override
+  State<_VaultPasswordTile> createState() => _VaultPasswordTileState();
+}
+
+class _VaultPasswordTileState extends State<_VaultPasswordTile> {
+  bool _obscure = true;
+  String? _decrypted;
+  bool _loading = false;
+  bool _biometricPassed = false;
+
+  Future<bool> _authenticate() async {
+    final auth = LocalAuthentication();
+    try {
+      final didAuthenticate = await auth.authenticate(
+        localizedReason: 'Please authenticate to view the password',
+        options:
+            const AuthenticationOptions(biometricOnly: false, stickyAuth: true),
+      );
+      return didAuthenticate;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<void> _toggleShow() async {
+    if (_obscure) {
+      if (!_biometricPassed) {
+        final passed = await _authenticate();
+        if (!passed) return;
+        setState(() => _biometricPassed = true);
+      }
+      setState(() => _loading = true);
+      final encService = await widget.encServiceFuture;
+      try {
+        final decrypted = await encService.decrypt(EncryptedPayload(
+          ciphertext: widget.item.encryptedData,
+          nonce: widget.item.nonce,
+          mac: widget.item.mac,
+        ));
+        setState(() {
+          _decrypted = decrypted;
+          _obscure = false;
+        });
+      } catch (e) {
+        setState(() {
+          _decrypted = '[Decryption failed]';
+          _obscure = false;
+        });
+      } finally {
+        setState(() => _loading = false);
+      }
+    } else {
+      setState(() => _obscure = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final label = widget.item.label;
+    if (widget.search.isNotEmpty &&
+        !label.toLowerCase().contains(widget.search.toLowerCase()) &&
+        !(_decrypted ?? '')
+            .toLowerCase()
+            .contains(widget.search.toLowerCase())) {
+      return const SizedBox.shrink();
+    }
+    return ListTile(
+      leading: const Icon(Icons.vpn_key),
+      title: Text(label),
+      subtitle: _loading
+          ? const Text('Decrypting...')
+          : _decrypted == null || _obscure
+              ? const Text('••••••••')
+              : Text(_decrypted!),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: Icon(_obscure ? Icons.visibility : Icons.visibility_off),
+            onPressed: _toggleShow,
+            tooltip: _obscure ? 'Show Password' : 'Hide Password',
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: () async {
+              await widget.vaultRepo.deleteVaultItem(widget.item.id);
+            },
+          ),
+        ],
+      ),
+      onTap: () {},
     );
   }
 }

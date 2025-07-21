@@ -15,6 +15,7 @@ class VaultEditorScreen extends StatefulWidget {
 class _VaultEditorScreenState extends State<VaultEditorScreen> {
   late TextEditingController _labelController;
   late TextEditingController _secretController;
+  bool _obscureSecret = true;
 
   @override
   void initState() {
@@ -60,8 +61,18 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
                     controller: _secretController,
                     decoration:
                         const InputDecoration(labelText: 'Secret / Password'),
-                    obscureText: true,
+                    obscureText: _obscureSecret,
                   ),
+                ),
+                IconButton(
+                  icon: Icon(
+                      _obscureSecret ? Icons.visibility : Icons.visibility_off),
+                  tooltip: _obscureSecret ? 'Show Password' : 'Hide Password',
+                  onPressed: () {
+                    setState(() {
+                      _obscureSecret = !_obscureSecret;
+                    });
+                  },
                 ),
                 IconButton(
                   icon: const Icon(Icons.refresh),
