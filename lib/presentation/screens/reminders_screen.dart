@@ -79,36 +79,56 @@ class _RemindersScreenState extends State<RemindersScreen> {
                 if (!encSnapshot.hasData)
                   return const ListTile(title: Text('[Loading...]'));
                 final encService = encSnapshot.data!;
-                return FutureBuilder<String>(
-                  future: encService.decrypt(EncryptedPayload(
-                    ciphertext: reminders[index].encryptedData,
-                    nonce: reminders[index].nonce,
-                  )),
+                return FutureBuilder<List<String>>(
+                  future: () async {
+                    final title = await encService.decrypt(EncryptedPayload(
+                      ciphertext: reminders[index].encryptedData,
+                      nonce: reminders[index].nonce,
+                    ));
+                    String content = '';
+                    if (reminders[index].encryptedContent.isNotEmpty &&
+                        reminders[index].contentNonce.isNotEmpty) {
+                      content = await encService.decrypt(EncryptedPayload(
+                        ciphertext: reminders[index].encryptedContent,
+                        nonce: reminders[index].contentNonce,
+                      ));
+                    }
+                    return [title, content];
+                  }(),
                   builder: (context, decSnapshot) {
-                    final title = decSnapshot.data ?? '[Encrypted]';
+                    final title = decSnapshot.data?[0] ?? '[Encrypted]';
+                    final content = decSnapshot.data?[1] ?? '';
                     if (_search.isNotEmpty &&
-                        !title.toLowerCase().contains(_search.toLowerCase())) {
+                        !title.toLowerCase().contains(_search.toLowerCase()) &&
+                        !content
+                            .toLowerCase()
+                            .contains(_search.toLowerCase())) {
                       return const SizedBox.shrink();
                     }
                     return ListTile(
                       leading: const Icon(Icons.alarm),
                       title: Text(title),
-                      subtitle: Text(reminders[index].created.toString()),
+                      subtitle: Text(content.isNotEmpty
+                          ? content
+                          : reminders[index].created.toString()),
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => ReminderEditorScreen(
                               initialTitle: title,
-                              initialContent:
-                                  '[Decrypted content here]', // TODO: decrypt content field if stored separately
+                              initialContent: content,
                               onSave: (newTitle, newContent) async {
-                                final encrypted =
+                                final encryptedTitle =
                                     await encService.encrypt(newTitle);
+                                final encryptedContent =
+                                    await encService.encrypt(newContent);
                                 final updated = ReminderModel(
                                   id: reminders[index].id,
-                                  encryptedData: encrypted.ciphertext,
-                                  nonce: encrypted.nonce,
+                                  encryptedData: encryptedTitle.ciphertext,
+                                  nonce: encryptedTitle.nonce,
+                                  encryptedContent: encryptedContent.ciphertext,
+                                  contentNonce: encryptedContent.nonce,
                                   created: reminders[index].created,
                                   updated: DateTime.now(),
                                   title: newTitle,
@@ -146,11 +166,15 @@ class _RemindersScreenState extends State<RemindersScreen> {
                 MaterialPageRoute(
                   builder: (context) => ReminderEditorScreen(
                     onSave: (title, content) async {
-                      final encrypted = await encService.encrypt(title);
+                      final encryptedTitle = await encService.encrypt(title);
+                      final encryptedContent =
+                          await encService.encrypt(content);
                       final reminder = ReminderModel(
                         id: '',
-                        encryptedData: encrypted.ciphertext,
-                        nonce: encrypted.nonce,
+                        encryptedData: encryptedTitle.ciphertext,
+                        nonce: encryptedTitle.nonce,
+                        encryptedContent: encryptedContent.ciphertext,
+                        contentNonce: encryptedContent.nonce,
                         created: DateTime.now(),
                         updated: DateTime.now(),
                         title: title,
