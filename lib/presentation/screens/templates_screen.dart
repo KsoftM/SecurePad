@@ -96,19 +96,30 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
                     }
                     return ListTile(
                       leading: const Icon(Icons.view_list),
-                      title: Text(name),
+                      title: Text(templates[index].name),
                       subtitle: Text(templates[index].created.toString()),
-                      onTap: () {
+                      onTap: () async {
+                        String decryptedContent;
+                        try {
+                          decryptedContent =
+                              await encService.decrypt(EncryptedPayload(
+                            ciphertext: templates[index].encryptedData,
+                            nonce: templates[index].nonce,
+                            mac: templates[index].mac,
+                          ));
+                        } catch (e) {
+                          decryptedContent = '[Decryption failed]';
+                        }
+                        if (!mounted) return;
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => TemplateEditorScreen(
-                              initialName: name,
-                              initialContent:
-                                  '[Decrypted content here]', // TODO: decrypt content field if stored separately
+                              initialName: templates[index].name,
+                              initialContent: decryptedContent,
                               onSave: (newName, newContent) async {
                                 final encrypted =
-                                    await encService.encrypt(newName);
+                                    await encService.encrypt(newContent);
                                 final updated = TemplateModel(
                                   id: templates[index].id,
                                   encryptedData: encrypted.ciphertext,
@@ -151,7 +162,7 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
                 MaterialPageRoute(
                   builder: (context) => TemplateEditorScreen(
                     onSave: (name, content) async {
-                      final encrypted = await encService.encrypt(name);
+                      final encrypted = await encService.encrypt(content);
                       final template = TemplateModel(
                         id: '',
                         encryptedData: encrypted.ciphertext,

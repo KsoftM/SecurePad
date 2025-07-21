@@ -9,6 +9,7 @@ class ReminderModel {
   final DateTime created;
   final DateTime updated;
   final String title;
+  final String repeat;
 
   ReminderModel({
     required this.id,
@@ -21,6 +22,7 @@ class ReminderModel {
     required this.created,
     required this.updated,
     required this.title,
+    required this.repeat,
   });
 
   factory ReminderModel.fromMap(String id, Map<String, dynamic> map) {
@@ -35,6 +37,7 @@ class ReminderModel {
       created: DateTime.parse(map['created'] as String),
       updated: DateTime.parse(map['updated'] as String),
       title: map['title'] as String,
+      repeat: map['repeat'] as String? ?? 'None',
     );
   }
 
@@ -49,6 +52,7 @@ class ReminderModel {
       'created': created.toIso8601String(),
       'updated': updated.toIso8601String(),
       'title': title,
+      'repeat': repeat,
     };
   }
 }

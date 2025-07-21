@@ -89,7 +89,13 @@ class _NotesScreenState extends State<NotesScreen> {
                     mac: notes[index].mac,
                   )),
                   builder: (context, decSnapshot) {
-                    final preview = decSnapshot.data ?? '[Encrypted]';
+                    final preview = decSnapshot.data != null
+                        ? decSnapshot.data!.split('\n').first.substring(
+                            0,
+                            decSnapshot.data!.split('\n').first.length > 200
+                                ? 200
+                                : decSnapshot.data!.split('\n').first.length)
+                        : '[Encrypted]';
                     if (_search.isNotEmpty &&
                         !preview
                             .toLowerCase()
@@ -105,7 +111,7 @@ class _NotesScreenState extends State<NotesScreen> {
                           context,
                           MaterialPageRoute(
                             builder: (context) => NoteEditorScreen(
-                              initialText: preview,
+                              initialText: decSnapshot.data,
                               onSave: (text) async {
                                 final encrypted =
                                     await encService.encrypt(text);

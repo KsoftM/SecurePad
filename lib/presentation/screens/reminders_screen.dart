@@ -123,7 +123,9 @@ class _RemindersScreenState extends State<RemindersScreen> {
                             builder: (context) => ReminderEditorScreen(
                               initialTitle: title,
                               initialContent: content,
-                              onSave: (newTitle, newContent) async {
+                              initialDate: reminders[index].created,
+                              initialRepeat: reminders[index].repeat,
+                              onSave: (newTitle, newContent, newRepeat) async {
                                 final encryptedTitle =
                                     await encService.encrypt(newTitle);
                                 final encryptedContent =
@@ -139,6 +141,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
                                   created: reminders[index].created,
                                   updated: DateTime.now(),
                                   title: newTitle,
+                                  repeat: newRepeat,
                                 );
                                 await remindersRepo.updateReminder(updated);
                               },
@@ -172,7 +175,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => ReminderEditorScreen(
-                    onSave: (title, content) async {
+                    onSave: (title, content, repeat) async {
                       final encryptedTitle = await encService.encrypt(title);
                       final encryptedContent =
                           await encService.encrypt(content);
@@ -187,6 +190,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
                         created: DateTime.now(),
                         updated: DateTime.now(),
                         title: title,
+                        repeat: repeat,
                       );
                       await remindersRepo.addReminder(reminder);
                     },

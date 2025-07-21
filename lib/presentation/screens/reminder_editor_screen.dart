@@ -5,12 +5,17 @@ import '../../core/reminder_scheduler.dart';
 class ReminderEditorScreen extends StatefulWidget {
   final String? initialTitle;
   final String? initialContent;
-  final void Function(String title, String content) onSave;
-  const ReminderEditorScreen(
-      {super.key,
-      this.initialTitle,
-      this.initialContent,
-      required this.onSave});
+  final DateTime? initialDate;
+  final String? initialRepeat;
+  final void Function(String title, String content, String repeat) onSave;
+  const ReminderEditorScreen({
+    super.key,
+    this.initialTitle,
+    this.initialDate,
+    this.initialRepeat,
+    this.initialContent,
+    required this.onSave,
+  });
 
   @override
   State<ReminderEditorScreen> createState() => _ReminderEditorScreenState();
@@ -35,6 +40,8 @@ class _ReminderEditorScreenState extends State<ReminderEditorScreen> {
     _titleController = TextEditingController(text: widget.initialTitle ?? '');
     _contentController =
         TextEditingController(text: widget.initialContent ?? '');
+    _selectedDateTime = widget.initialDate ?? DateTime.now();
+    _repeat = widget.initialRepeat ?? _repeatOptions.first;
   }
 
   @override
@@ -53,7 +60,11 @@ class _ReminderEditorScreenState extends State<ReminderEditorScreen> {
           IconButton(
             icon: const Icon(Icons.save),
             onPressed: () async {
-              widget.onSave(_titleController.text, _contentController.text);
+              widget.onSave(
+                _titleController.text,
+                _contentController.text,
+                _repeat,
+              );
               if (_selectedDateTime != null) {
                 await ReminderScheduler.scheduleReminder(
                   id: _titleController.text.hashCode,
