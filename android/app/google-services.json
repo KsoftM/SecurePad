@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "736448350309",
+    "project_id": "pad-c6697",
+    "storage_bucket": "pad-c6697.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:736448350309:android:92c4c5139356c5fdf41e8c",
+        "android_client_info": {
+          "package_name": "com.ksoftm.securepad.secure_pad"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhvgroNlgdLqh7G8i0IBE4TIzkI5uc4qA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -32,8 +32,29 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         await auth.register(_emailController.text, _passwordController.text);
       }
+      if (mounted) {
+        setState(() => _error = null);
+      }
+    } on Exception catch (e) {
+      String message = 'An error occurred. Please try again.';
+      if (e.toString().contains('email-already-in-use')) {
+        message = 'Email already in use.';
+      } else if (e.toString().contains('invalid-email')) {
+        message = 'Invalid email address.';
+      } else if (e.toString().contains('weak-password')) {
+        message = 'Password should be at least 6 characters.';
+      } else if (e.toString().contains('user-not-found')) {
+        message = 'No user found for that email.';
+      } else if (e.toString().contains('wrong-password')) {
+        message = 'Wrong password provided.';
+      }
+      if (mounted) {
+        setState(() => _error = message);
+      }
     } catch (e) {
-      setState(() => _error = e.toString());
+      if (mounted) {
+        setState(() => _error = 'Unknown error: $e');
+      }
     }
   }
 
