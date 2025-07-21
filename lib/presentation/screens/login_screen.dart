@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../bloc/auth_bloc.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -25,12 +25,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _submit(BuildContext context) async {
     if (!_formKey.currentState!.validate()) return;
-    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final authBloc = context.read<AuthBloc>();
     try {
       if (_isLogin) {
-        await auth.signIn(_emailController.text, _passwordController.text);
+        authBloc
+            .add(AuthSignIn(_emailController.text, _passwordController.text));
       } else {
-        await auth.register(_emailController.text, _passwordController.text);
+        authBloc
+            .add(AuthRegister(_emailController.text, _passwordController.text));
       }
       if (mounted) {
         setState(() => _error = null);
@@ -60,7 +62,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context);
     return Scaffold(
       appBar: AppBar(title: Text(_isLogin ? 'Login' : 'Register')),
       body: Center(
@@ -91,7 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: auth.isLoading ? null : () => _submit(context),
+                  onPressed: () => _submit(context),
                   child: Text(_isLogin ? 'Login' : 'Register'),
                 ),
                 TextButton(

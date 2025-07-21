@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:cryptography/cryptography.dart';
 import 'dart:convert';
 import 'dart:math';
 import '../../core/encryption_service.dart';
 import '../../core/secure_storage_service.dart';
-import '../providers/auth_provider.dart';
 import '../../data/reminders/reminder_model.dart';
 import '../../data/reminders/reminders_repository.dart';
 import 'reminder_editor_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../bloc/auth_bloc.dart';
 
 class RemindersScreen extends StatefulWidget {
   const RemindersScreen({super.key});
@@ -23,8 +23,11 @@ class _RemindersScreenState extends State<RemindersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context);
-    final userId = auth.user?.uid ?? '';
+    final authState = context.watch<AuthBloc>().state;
+    String userId = '';
+    if (authState is Authenticated) {
+      userId = authState.user.uid;
+    }
     final remindersRepo = RemindersRepository(
         firestore: FirebaseFirestore.instance, userId: userId);
     final storage = SecureStorageService();

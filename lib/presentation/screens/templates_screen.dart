@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:cryptography/cryptography.dart';
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/encryption_service.dart';
 import '../../core/secure_storage_service.dart';
-import '../providers/auth_provider.dart';
 import '../../data/templates/template_model.dart';
 import '../../data/templates/templates_repository.dart';
 import 'template_editor_screen.dart';
+import '../bloc/auth_bloc.dart';
 
 class TemplatesScreen extends StatefulWidget {
   const TemplatesScreen({super.key});
@@ -24,8 +24,11 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context);
-    final userId = auth.user?.uid ?? '';
+    final authState = context.watch<AuthBloc>().state;
+    String userId = '';
+    if (authState is Authenticated) {
+      userId = authState.user.uid;
+    }
     final templatesRepo = TemplatesRepository(
         firestore: FirebaseFirestore.instance, userId: userId);
     final storage = SecureStorageService();

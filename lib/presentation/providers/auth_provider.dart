@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../data/auth/auth_service.dart';
 
+// This file is now obsolete after migration to Bloc. Remove it.
+
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
   User? _user;

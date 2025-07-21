@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../bloc/auth_bloc.dart';
 import 'package:cryptography/cryptography.dart';
 import 'dart:convert';
 import 'dart:math';
 
 import '../../core/encryption_service.dart';
 import '../../core/secure_storage_service.dart';
-import '../providers/auth_provider.dart';
 import '../../data/notes/note_model.dart';
 import '../../data/notes/notes_repository.dart';
 import 'note_editor_screen.dart';
@@ -24,8 +24,11 @@ class _NotesScreenState extends State<NotesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context);
-    final userId = auth.user?.uid ?? '';
+    final authState = context.watch<AuthBloc>().state;
+    String userId = '';
+    if (authState is Authenticated) {
+      userId = authState.user.uid;
+    }
     final notesRepo =
         NotesRepository(firestore: FirebaseFirestore.instance, userId: userId);
     final storage = SecureStorageService();

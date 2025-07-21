@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:cryptography/cryptography.dart';
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math';
 import 'package:local_auth/local_auth.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/encryption_service.dart';
 import '../../core/secure_storage_service.dart';
-import '../providers/auth_provider.dart';
 import '../../data/vault/vault_model.dart';
 import '../../data/vault/vault_repository.dart';
 import 'vault_editor_screen.dart';
 import '../../core/platform_helper.dart';
+import '../bloc/auth_bloc.dart';
 
 class VaultScreen extends StatefulWidget {
   const VaultScreen({super.key});
@@ -26,8 +26,11 @@ class _VaultScreenState extends State<VaultScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context);
-    final userId = auth.user?.uid ?? '';
+    final authState = context.watch<AuthBloc>().state;
+    String userId = '';
+    if (authState is Authenticated) {
+      userId = authState.user.uid;
+    }
     final vaultRepo =
         VaultRepository(firestore: FirebaseFirestore.instance, userId: userId);
     final storage = SecureStorageService();

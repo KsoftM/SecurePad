@@ -1,7 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'presentation/providers/auth_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'presentation/bloc/auth_bloc.dart';
 import 'presentation/screens/login_screen.dart';
 import 'presentation/screens/home_screen.dart';
 import 'presentation/screens/splash_screen.dart';
@@ -22,27 +22,53 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AuthProvider(),
-      child: Consumer<AuthProvider>(
-        builder: (context, auth, _) {
-          return MaterialApp(
-            title: 'SecurePad',
-            debugShowCheckedModeBanner: false,
-            theme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-              useMaterial3: true,
-            ),
-            home: auth.isLoading
-                ? const SplashScreen()
-                : auth.isAuthenticated
-                    ? const HomeScreen()
-                    : const LoginScreen(),
-            routes: {
-              '/login': (context) => const LoginScreen(),
-              '/home': (context) => const HomeScreen(),
-            },
-          );
+    return BlocProvider(
+      create: (_) => AuthBloc()..add(AuthStarted()),
+      child: BlocBuilder<AuthBloc, AuthState>(
+        builder: (context, state) {
+          if (state is AuthLoading || state is AuthInitial) {
+            return MaterialApp(
+              title: 'SecurePad',
+              debugShowCheckedModeBanner: false,
+              theme: ThemeData(
+                colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+                useMaterial3: true,
+              ),
+              home: const SplashScreen(),
+              routes: {
+                '/login': (context) => const LoginScreen(),
+                '/home': (context) => const HomeScreen(),
+              },
+            );
+          } else if (state is Authenticated) {
+            return MaterialApp(
+              title: 'SecurePad',
+              debugShowCheckedModeBanner: false,
+              theme: ThemeData(
+                colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+                useMaterial3: true,
+              ),
+              home: const HomeScreen(),
+              routes: {
+                '/login': (context) => const LoginScreen(),
+                '/home': (context) => const HomeScreen(),
+              },
+            );
+          } else {
+            return MaterialApp(
+              title: 'SecurePad',
+              debugShowCheckedModeBanner: false,
+              theme: ThemeData(
+                colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+                useMaterial3: true,
+              ),
+              home: const LoginScreen(),
+              routes: {
+                '/login': (context) => const LoginScreen(),
+                '/home': (context) => const HomeScreen(),
+              },
+            );
+          }
         },
       ),
     );
