@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cryptography/cryptography.dart';
@@ -14,6 +12,7 @@ import '../providers/auth_provider.dart';
 import '../../data/vault/vault_model.dart';
 import '../../data/vault/vault_repository.dart';
 import 'vault_editor_screen.dart';
+import '../../core/platform_helper.dart';
 
 class VaultScreen extends StatefulWidget {
   const VaultScreen({super.key});
@@ -148,14 +147,21 @@ class _VaultPasswordTileState extends State<_VaultPasswordTile> {
   bool _biometricPassed = false;
 
   Future<bool> _authenticate() async {
-    final auth = LocalAuthentication();
     try {
-      final didAuthenticate = await auth.authenticate(
-        localizedReason: 'Please authenticate to view the password',
-        options:
-            const AuthenticationOptions(biometricOnly: false, stickyAuth: true),
-      );
-      return didAuthenticate;
+      if (!isSupportedPlatform()) {
+        return true;
+      }
+      final auth = LocalAuthentication();
+      try {
+        final didAuthenticate = await auth.authenticate(
+          localizedReason: 'Please authenticate to view the password',
+          options: const AuthenticationOptions(
+              biometricOnly: false, stickyAuth: true),
+        );
+        return didAuthenticate;
+      } catch (e) {
+        return false;
+      }
     } catch (e) {
       return false;
     }
@@ -227,7 +233,46 @@ class _VaultPasswordTileState extends State<_VaultPasswordTile> {
           ),
         ],
       ),
-      onTap: () {},
+      onTap: () async {
+        setState(() => _loading = true);
+        final encService = await widget.encServiceFuture;
+        String? decrypted;
+        try {
+          decrypted = await encService.decrypt(EncryptedPayload(
+            ciphertext: widget.item.encryptedData,
+            nonce: widget.item.nonce,
+            mac: widget.item.mac,
+          ));
+        } catch (e) {
+          decrypted = '[Decryption failed]';
+        } finally {
+          setState(() => _loading = false);
+        }
+        if (!mounted) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VaultEditorScreen(
+              initialLabel: widget.item.label,
+              initialSecret: decrypted,
+              onSave: (newLabel, newSecret) async {
+                final encrypted = await encService
+                    .encrypt(newSecret.isEmpty ? newLabel : newSecret);
+                final updated = VaultModel(
+                  id: widget.item.id,
+                  encryptedData: encrypted.ciphertext,
+                  nonce: encrypted.nonce,
+                  mac: encrypted.mac,
+                  created: widget.item.created,
+                  updated: DateTime.now(),
+                  label: newLabel,
+                );
+                await widget.vaultRepo.updateVaultItem(updated);
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 }
