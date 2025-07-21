@@ -58,7 +58,8 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
                 Expanded(
                   child: TextField(
                     controller: _secretController,
-                    decoration: const InputDecoration(labelText: 'Secret / Password'),
+                    decoration:
+                        const InputDecoration(labelText: 'Secret / Password'),
                     obscureText: true,
                   ),
                 ),

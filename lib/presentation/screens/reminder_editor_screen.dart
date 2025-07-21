@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../core/reminder_scheduler.dart';
 
 class ReminderEditorScreen extends StatefulWidget {
   final String? initialTitle;
@@ -20,7 +21,13 @@ class _ReminderEditorScreenState extends State<ReminderEditorScreen> {
   late TextEditingController _contentController;
   DateTime? _selectedDateTime;
   String _repeat = 'None';
-  final List<String> _repeatOptions = ['None', 'Daily', 'Weekly', 'Monthly', 'Yearly'];
+  final List<String> _repeatOptions = [
+    'None',
+    'Daily',
+    'Weekly',
+    'Monthly',
+    'Yearly'
+  ];
 
   @override
   void initState() {
@@ -45,8 +52,17 @@ class _ReminderEditorScreenState extends State<ReminderEditorScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
-            onPressed: () {
+            onPressed: () async {
               widget.onSave(_titleController.text, _contentController.text);
+              if (_selectedDateTime != null) {
+                await ReminderScheduler.scheduleReminder(
+                  id: _titleController.text.hashCode,
+                  title: _titleController.text,
+                  body: _contentController.text,
+                  scheduledTime: _selectedDateTime!,
+                  repeat: _repeat,
+                );
+              }
               Navigator.pop(context);
             },
           ),
@@ -71,7 +87,7 @@ class _ReminderEditorScreenState extends State<ReminderEditorScreen> {
                 Expanded(
                   child: Text(_selectedDateTime == null
                       ? 'No date/time selected'
-                      : 'Scheduled: ' + DateFormat.yMd().add_jm().format(_selectedDateTime!)),
+                      : 'Scheduled: ${DateFormat.yMd().add_jm().format(_selectedDateTime!)}'),
                 ),
                 IconButton(
                   icon: const Icon(Icons.calendar_today),
@@ -90,7 +106,8 @@ class _ReminderEditorScreenState extends State<ReminderEditorScreen> {
                       );
                       if (time != null) {
                         setState(() {
-                          _selectedDateTime = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+                          _selectedDateTime = DateTime(date.year, date.month,
+                              date.day, time.hour, time.minute);
                         });
                       }
                     }
@@ -100,7 +117,9 @@ class _ReminderEditorScreenState extends State<ReminderEditorScreen> {
             ),
             DropdownButton<String>(
               value: _repeat,
-              items: _repeatOptions.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+              items: _repeatOptions
+                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                  .toList(),
               onChanged: (val) => setState(() => _repeat = val ?? 'None'),
             ),
           ],

@@ -88,7 +88,9 @@ class _NotesScreenState extends State<NotesScreen> {
                   builder: (context, decSnapshot) {
                     final preview = decSnapshot.data ?? '[Encrypted]';
                     if (_search.isNotEmpty &&
-                        !preview.toLowerCase().contains(_search.toLowerCase())) {
+                        !preview
+                            .toLowerCase()
+                            .contains(_search.toLowerCase())) {
                       return const SizedBox.shrink();
                     }
                     return ListTile(

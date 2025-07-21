@@ -4,8 +4,11 @@ import 'presentation/providers/auth_provider.dart';
 import 'presentation/screens/login_screen.dart';
 import 'presentation/screens/home_screen.dart';
 import 'presentation/screens/splash_screen.dart';
+import 'core/reminder_scheduler.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await ReminderScheduler.initialize();
   runApp(const MyApp());
 }
 
