@@ -6,7 +6,9 @@ import 'dart:math';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/encryption_service.dart';
+import '../../core/cloud_key_service.dart';
 import '../../core/secure_storage_service.dart';
+import 'passphrase_dialog.dart';
 import '../../data/templates/template_model.dart';
 import '../../data/templates/templates_repository.dart';
 import 'template_editor_screen.dart';
@@ -31,21 +33,51 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
     }
     final templatesRepo = TemplatesRepository(
         firestore: FirebaseFirestore.instance, userId: userId);
-    final storage = SecureStorageService();
-
+    final cloudKeyService = CloudKeyService(FirebaseFirestore.instance);
+    final sessionStorage = SecureStorageService();
     Future<EncryptionService> getEncryptionService() async {
-      final keyString = await storage.read('template_key_$userId');
-      SecretKey key;
-      if (keyString == null) {
+      final keyDoc = await cloudKeyService.getEncryptedKey(userId);
+      String? passphrase;
+      String? salt;
+      List<int> encryptionKeyBytes;
+      if (keyDoc == null) {
+        passphrase = await showDialog<String>(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => const PassphraseDialog(
+            title: 'Set a passphrase',
+            subtitle:
+                'This passphrase will unlock your templates on any device. Do not forget it!',
+            confirm: true,
+          ),
+        );
+        if (passphrase == null) throw Exception('Passphrase required');
+        salt = base64Encode(
+            List<int>.generate(16, (_) => Random.secure().nextInt(256)));
+        final derivedKey = await cloudKeyService.deriveKey(passphrase, salt);
         final random = Random.secure();
-        final keyBytes = List<int>.generate(32, (_) => random.nextInt(256));
-        key = SecretKey(keyBytes);
-        await storage.write(
-            'template_key_$userId', base64Encode(await key.extractBytes()));
+        encryptionKeyBytes = List<int>.generate(32, (_) => random.nextInt(256));
+        final encryptedKey =
+            await cloudKeyService.encryptKey(encryptionKeyBytes, derivedKey);
+        await cloudKeyService.storeEncryptedKey(userId, encryptedKey, salt);
       } else {
-        key = SecretKey(base64Decode(keyString));
+        passphrase = await sessionStorage.read('passphrase_key_$userId');
+        passphrase ??= await showDialog<String>(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => const PassphraseDialog(
+            title: 'Enter your passphrase',
+          ),
+        );
+        if (passphrase == null) throw Exception('Passphrase required');
+        salt = keyDoc['salt'] ?? '';
+        final encryptedKey = keyDoc['encryptedKey'] ?? '';
+        final derivedKey = await cloudKeyService.deriveKey(passphrase, salt);
+        encryptionKeyBytes =
+            await cloudKeyService.decryptKey(encryptedKey, derivedKey);
       }
-      return EncryptionService(key);
+      await sessionStorage.write('passphrase_key_$userId', passphrase);
+      return EncryptionService(SecretKey(encryptionKeyBytes));
     }
 
     return Scaffold(

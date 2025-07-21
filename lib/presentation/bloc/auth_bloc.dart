@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../core/secure_storage_service.dart';
 import '../../data/auth/auth_service.dart';
 import 'package:equatable/equatable.dart';
 
@@ -51,6 +52,7 @@ class Unauthenticated extends AuthState {}
 // Bloc
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthService _authService = AuthService();
+  final sessionStorage = SecureStorageService();
   AuthBloc() : super(AuthInitial()) {
     on<AuthStarted>((event, emit) async {
       emit(AuthLoading());
@@ -66,6 +68,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       await _authService.signInWithEmail(event.email, event.password);
       final user = await _authService.userChanges.first;
       if (user != null) {
+        sessionStorage.write('user_id', user.uid);
         emit(Authenticated(user));
       } else {
         emit(Unauthenticated());
@@ -76,6 +79,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       await _authService.registerWithEmail(event.email, event.password);
       final user = await _authService.userChanges.first;
       if (user != null) {
+        sessionStorage.write('user_id', user.uid);
         emit(Authenticated(user));
       } else {
         emit(Unauthenticated());
@@ -83,6 +87,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     });
     on<AuthSignOut>((event, emit) async {
       await _authService.signOut();
+      final userId = await sessionStorage.read('user_id');
+      if (userId != null) {
+        sessionStorage.delete('user_id');
+      }
+      await sessionStorage.delete('passphrase_key_$userId');
       emit(Unauthenticated());
     });
   }

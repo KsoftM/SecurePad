@@ -11,6 +11,7 @@ import '../../data/notes/note_model.dart';
 import '../../data/notes/notes_repository.dart';
 import 'note_editor_screen.dart';
 import '../../core/cloud_key_service.dart';
+import '../../core/secure_storage_service.dart';
 import 'passphrase_dialog.dart';
 
 class NotesScreen extends StatefulWidget {
@@ -33,6 +34,7 @@ class _NotesScreenState extends State<NotesScreen> {
     final notesRepo =
         NotesRepository(firestore: FirebaseFirestore.instance, userId: userId);
     final cloudKeyService = CloudKeyService(FirebaseFirestore.instance);
+    final sessionStorage = SecureStorageService();
     Future<EncryptionService> getEncryptionService() async {
       final keyDoc = await cloudKeyService.getEncryptedKey(userId);
       String? passphrase;
@@ -60,8 +62,8 @@ class _NotesScreenState extends State<NotesScreen> {
             await cloudKeyService.encryptKey(encryptionKeyBytes, derivedKey);
         await cloudKeyService.storeEncryptedKey(userId, encryptedKey, salt);
       } else {
-        // Existing user: prompt for passphrase and decrypt key
-        passphrase = await showDialog<String>(
+        passphrase = await sessionStorage.read('passphrase_key_$userId');
+        passphrase ??= await showDialog<String>(
           context: context,
           barrierDismissible: false,
           builder: (ctx) => const PassphraseDialog(
@@ -75,6 +77,7 @@ class _NotesScreenState extends State<NotesScreen> {
         encryptionKeyBytes =
             await cloudKeyService.decryptKey(encryptedKey, derivedKey);
       }
+      await sessionStorage.write('passphrase_key_$userId', passphrase);
       return EncryptionService(SecretKey(encryptionKeyBytes));
     }
 
